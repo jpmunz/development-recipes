@@ -1,3 +1,5 @@
+Hosted at https://development-recipes.readthedocs.io/en/latest/
+
 ### Setup
 
 ```
