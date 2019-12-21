@@ -70,6 +70,7 @@ Run the API:
     . venv/bin/activate
     FLASK_APP=myapp FLASK_ENV=development flask run
 
+.. _rest-api-db-setup:
 
 DB Setup
 --------
@@ -701,23 +702,29 @@ Deployment
 
 * Setup hosting for a :ref:`wsgi-app-hosting`
 
-Create a production build:
+Copy over the code:
 
 .. code:: bash
 
-    venv/bin//pip install -r requirements.txt
+    rsync -avzr --delete --exclude '__pycache__*' myapp.ini default_config.py wsgi.py myapp requirements <server>/var/app/myapp
 
-Copy over the build:
+Build the dependencies:
 
 .. code:: bash
 
-    rsync -avzr --delete --exclude '__pycache__*' myapp.ini default_config.py wsgi.py myapp venv <server>/var/app/myapp
+    ssh -t <server> 'cd /var/app/myapp && python3 -m venv venv && venv/bin/pip install --upgrade pip && venv/bin/pip install -r requirements.txt'
 
 Make sure that any required config overrides are set in ``<server>/var/app/myapp/instance/config.py``:
 
 .. code:: python
 
     SECRET_PASS = # ...
+
+Run any migrations if using SQL:
+
+.. code:: bash
+
+    FLASK_APP=myapp venv/bin/flask db upgrade
 
 Restart the app service:
 
@@ -733,7 +740,7 @@ CI/CD
 Generate a password-less SSH key and copy over the public key to ``.ssh/authorized_keys`` on the server being deployed to.
 In the GitHub repo for the project add a DEPLOY_KEY secret and paste in the private key then add the following secrets:
 
-* DEPLOY_DESTINATION: ``<username>@<server>:/var/www/<hostname>/html``
+* DEPLOY_DESTINATION: ``<username>@<server>:/var/app/myapp``
 * DEPLOY_USERNAME: ``<username>``
 * DEPLOY_HOST: ``<server>``
 
@@ -742,7 +749,7 @@ allow it to be executed without a password:
 
 .. code:: bash
 
-    visudo
+    sudo visudo
 
 And add this line to the sudoers file:
 
@@ -805,14 +812,19 @@ Create a ``.github/workflows/deploy.yml`` action in the repo:
             host: ${{ secrets.DEPLOY_HOST }}
             username: ${{ secrets.DEPLOY_USERNAME }}
             key: ${{ secrets.DEPLOY_KEY }}
-            script: sudo /bin/systemctl restart myapp.service
+            script: |
+              cd /var/app/myapp
+              python3 -m venv venv
+              venv/bin/pip install --upgrade pip
+              venv/bin/pip install -r requirements.txt
+              sudo /bin/systemctl restart myapp.service
 
 Push to the repo to trigger the action
 
 TL;DR
 -----
 
-TODO sample repo to clone that encapsulates these tips
+See `this repo <https://github.com/jpmunz/sample-rest-api>`_ for an example project that encapsulates these tips.
 
 References
 ----------

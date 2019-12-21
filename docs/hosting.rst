@@ -69,6 +69,11 @@ WSGI App
 
 * Use `uWSGI <https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uswgi-and-nginx-on-ubuntu-18-04>`_
 
+.. code:: bash
+
+    venv/bin/pip install uwsgi
+    venv/bin/pip freeze > requirements.txt
+
 Create the app entrypoint in ``<myapp-repo>/wsgi.py``:
 
 .. code:: python
@@ -150,4 +155,6 @@ Create ``/etc/nginx/sites-available/<hostname>``:
     sudo ln -s /etc/nginx/sites-available/<hostname> /etc/nginx/sites-enabled/
     sudo systemctl restart nginx
 
-Then `Configure SSL <https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-18-04>`_
+Then `Configure SSL <https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-18-04>`_.
+
+Make sure to run any required :ref:`rest-api-db-setup`.
