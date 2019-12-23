@@ -80,13 +80,13 @@ In ``index.js`` import the ``rootReducer`` and setup the App:
 
 .. code:: jsx
 
-    import React from 'react'
-    import ReactDOM from 'react-dom'
-    import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit'
-    import logger from 'redux-logger'
-    import { Provider} from 'react-redux'
-    import { rootReducer } from 'src/state'
-    import App from 'src/views/App'
+    import React from "react"
+    import ReactDOM from "react-dom"
+    import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit"
+    import logger from "redux-logger"
+    import { Provider} from "react-redux"
+    import { rootReducer } from "src/state"
+    import App from "src/views/App"
 
     const store = configureStore({
       reducer: rootReducer,
@@ -110,7 +110,7 @@ derive something from the state you can use it directly:
 
 .. code:: javascript
 
-    import { produce } from 'immer';
+    import { produce } from "immer";
 
     const derivedState = produce(state, draft => {
         // Mutate draft
@@ -120,23 +120,28 @@ derive something from the state you can use it directly:
 Controlled Components
 ---------------------
 
+* Use `React Redux <https://react-redux.js.org/introduction/quick-start>`_
 * Use ``connect`` to map application state and state transition methods to props
 * Use ``autoBind`` in the constructor to make sure DOM handlers have access to ``this``
 * Export both the connected and unconnected component to facilitate unit testing
+
+.. code:: bash
+
+    npm install --save-exact react-redux react-autobind
 
 Example:
 
 .. code:: jsx
 
-    import React from 'react';
-    import {connect} from "react-redux";
-    import {selector1, selector2, action1, action2} from "src/state";
+    import React from "react";
+    import { connect } from "react-redux";
+    import { selector1, selector2, action1, action2 } from "src/state";
     import autoBind from "react-autobind";
 
     export class Component extends React.Component {
       constructor(props) {
         super(props);
-        this.state = {}
+        this.state = {};
         autoBind(this);
       }
 
@@ -165,23 +170,25 @@ Example:
         prop2: selector2(state),
         // ...
       }
-    }, (action1, action2)(Component);
+    }, { action1, action2 })(Component);
 
 Routes
 ------
 
 * Use `React DOM Router <https://reacttraining.com/react-router/web/guides/quick-start>`_
 
-Setup routes in ``App.js`` using ``react-dom-router``:
+Setup routes in ``App.js`` using ``react-router-dom``:
 
 .. code:: bash
 
-    npm install --save-exact react-dom-router
+    npm install --save-exact react-router-dom
 
 .. code:: javascript
 
-    import React from 'react';
-    import {Switch, Route} from "react-router-dom";
+    import React from "react";
+    import { Switch, Route } from "react-router-dom";
+    import Home from "./Home";
+    import Foo from "./Foo";
 
     class App extends React.Component {
       render() {
@@ -232,9 +239,34 @@ Create a separate ``api`` module to perform the async calls:
 
 .. code:: javascript
 
-  apiMethod(args) {
-    return fetch(process.env.REACT_APP_API_HOST + '/v1/endpoint');
-  }
+    export default class API {
+      _fetch(url, options) {
+        return fetch(process.env.REACT_APP_API_HOST + url, Object.assign({
+          // Set options common to all your API calls here
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }, options)).then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+
+          return response.json();
+        });
+      }
+
+      apiMethod(args) {
+        return this._fetch("/v1/endpoint");
+      }
+    };
+
+And have an instance available in ``src/state/index.js``:
+
+.. code:: javascript
+
+    import API from "src/api";
+
+    const api = new API();
 
 Use variables in ``.env.development``, ``env.production``, ``.env.test`` to control the location of the API in different
 environments:
@@ -247,7 +279,7 @@ Create a slice in your app state dedicated to tracking the flow of async operati
 
 .. code:: javascript
 
-    const asyncSlice = createSlice({
+    const asycnRequestsSlice = createSlice({
       name: "async",
       initialState: {},
       reducers: {
@@ -270,7 +302,7 @@ Create a slice in your app state dedicated to tracking the flow of async operati
     });
 
     export const rootReducer = combineReducers({
-      async: asyncSlice.reducer,
+      async: asycnRequestsSlice.reducer,
       // ...
     });
 
@@ -295,6 +327,9 @@ Create a rootSaga for handling the async requests:
 
 .. code:: javascript
 
+    import { put, call, takeLatest } from "redux-saga/effects";
+    // ...
+
     export const rootSaga = function*() {
       yield takeLatest(someAsyncRequest.type, handleSomeAsyncRequest);
       // ...
@@ -312,7 +347,7 @@ The handlers should follow the same basic pattern:
       const {id} = action.payload
       try {
         yield put(asyncRequestsSlice.actions.start({ id }));
-        const response = yield call([api, apiMethod], ...apiArgs);
+        const response = yield call([api, "apiMethod"], apiArg1, apiArg2);
         yield put(someStateTransitionBasedOnTheResponse({ response }));
         yield put(asyncRequestsSlice.actions.success({ id, response }));
       } catch (error) {
@@ -324,10 +359,10 @@ Finally, hook up the root saga in ``index.js``:
 
 .. code:: javascript
 
-    import createSagaMiddleware from 'redux-saga'
-    import {configureStore, getDefaultMiddleware} from "@reduxjs/toolkit"
-    import logger from 'redux-logger'
-    import {rootReducer, rootSaga } from 'src/state'
+    import createSagaMiddleware from "redux-saga"
+    import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit"
+    import logger from "redux-logger"
+    import { rootReducer, rootSaga } from "src/state"
 
     const sagaMiddleware = createSagaMiddleware();
 
@@ -343,9 +378,9 @@ the async operations:
 
 .. code:: jsx
 
-    import React from 'react';
-    import {connect} from 'react-redux';
-    import {someAsyncRequest, barAsyncRequest, getAsync} from 'src/state'
+    import React from "react";
+    import { connect } from "react-redux";
+    import { someAsyncRequest, barAsyncRequest, getAsync } from "src/state"
 
     class Edit extends React.Component {
       componentDidMount() {
@@ -388,8 +423,8 @@ From ``index.js`` do ``import './index.scss'`` then in ``index.scss``:
 
 .. code:: scss
 
-    @import 'variables';
-    @import '~bootstrap/scss/bootstrap';
+    @import "variables";
+    @import "~bootstrap/scss/bootstrap";
 
     /* Global Styles */
     body {
@@ -482,11 +517,11 @@ Then re-export the function in ``state/index.js`` so that consumers don't need t
 
 .. code:: javascript
 
-    import {someAdditionalSelector} from "./additional";
+    import { someAdditionalSelector } from "./additional";
 
     // ...
 
-    export {someAdditionalSelector}
+    export { someAdditionalSelector }
 
 For imports across directories allow relative imports in ``jsconfig.json``:
 
@@ -573,9 +608,9 @@ Basic Pattern:
     test("Clicking the CTA", () => {
       const component = renderComponent({});
 
-      fireEvent.click(component.getByText("CTA");
-      expect(action1.mock.calls).toEqual([[{ action: "foo" }]]);
-    }
+      fireEvent.click(component.getByText("CTA"));
+      expect(action1Mock.mock.calls).toEqual([[{ action: "foo" }]]);
+    });
 
 To avoid test order issues, set jest to automatically clear mocks after each test in ``package.json``:
 
@@ -694,10 +729,10 @@ Basic Pattern:
     const initialState = produce({}, () => ({
       foo: "bar",
       baz: true,
-    });
+    }));
 
     test("selector1", () => {
-      expect(selector1(initialState)).toBe("bar"));
+      expect(selector1(initialState)).toBe("bar");
     });
 
     test("selector2 true", () => {
@@ -709,7 +744,7 @@ Basic Pattern:
         draft.baz = false;
       });
 
-      expect(selector2(initialState)).toBe(false));
+      expect(selector2(initialState)).toBe(false);
     });
 
 Testing Actions
@@ -729,11 +764,11 @@ Basic Pattern:
     const initialState = produce({}, () => ({
       foo: "bar",
       baz: true,
-    });
+    }));
 
     test("action1", () => {
-      const updatedState = rootReducer(initialState, action1(payload));
-      expect(selector1(initialState)).toBe("bar after action is applied"));
+      const updatedState = rootReducer(initialState, action1({ /* payload */ }));
+      expect(selector1(updatedState)).toBe("bar after action is applied");
     });
 
 Testing Async Operations
@@ -788,13 +823,13 @@ Basic Pattern
     };
 
     test("someAsyncRequest success", async () => {
-      mockApiMethod1.mockResolvedValue(mockedResponse);
+      mockApiMethod1.mockResolvedValue({ /* response */ });
 
-      const sagaTester = startTest(someAsyncRequest(payload));
+      const sagaTest = startTest(someAsyncRequest({ /* payload */ }));
 
-      await sagaTester.waitFor("someAsyncRequest/success");
+      await sagaTest.waitFor("someAsyncRequest/success");
 
-      expect(selector1(sagaTest.getState()).toEqual(expectation);
+      expect(selector1(sagaTest.getState())).toEqual(/* expectation */);
     });
 
 Testing API Calls
@@ -817,16 +852,20 @@ Basic pattern:
 
 .. code:: javascript
 
+    import API from "./index";
+
+    const api = new API();
+
     test("Some fetch", async () => {
 
       // ...
 
-      fetch.once(mockedResponse);
-      const result = await api.apiMethod(apiArgs);
+      fetch.once(JSON.stringify({ /* response */ }));
+      const result = await api.apiMethod(/* apiArgs */);
 
-      expect(result).toEqual(expectedResult);
+      expect(result).toEqual(/* expectedResult */);
       expect(fetch.mock.calls).toEqual([
-        [expectedUrl, expectedFetchOptions]
+        /* [expectedUrl, expectedFetchOptions] */
       ]);
     });
 
@@ -862,6 +901,23 @@ Setup a pre-commit hook in ``package.json`` to automatically run Prettier and ES
       "git add"
     ]
   },
+
+This will only run Prettier on staged files going forward, so you should also do an initial Prettier run across all source files.
+Add a ``pretty`` npm run command to ``package.json``:
+
+.. code:: json
+
+  "scripts": {
+
+    "pretty": "prettier --write src/**/*.{js,jsx,json,css,scss,md}"
+
+  },
+
+And run it:
+
+.. code:: bash
+
+    npm run pretty
 
 Adding Dependencies
 -------------------
@@ -956,7 +1012,7 @@ Push to the repo to trigger the action
 TL;DR
 -----
 
-TODO sample repo to clone that encapsulates these tips
+See `this repo <https://github.com/jpmunz/sample-web-app>`_ for an example project that encapsulates these tips.
 
 References
 ----------
